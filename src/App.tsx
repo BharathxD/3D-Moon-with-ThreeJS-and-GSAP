@@ -1,8 +1,12 @@
 import { useRef, useEffect } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-const Scene = () => {
+gsap.registerPlugin(ScrollTrigger);
+
+const App = () => {
   const sceneRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -13,7 +17,8 @@ const Scene = () => {
       0.1,
       1000
     );
-    camera.position.set(0, 0, 5);
+    camera.position.set(0, 0, 15);
+    camera.lookAt(0, 0, 0);
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     sceneRef.current?.appendChild(renderer.domElement);
@@ -23,8 +28,8 @@ const Scene = () => {
       {
         name: "moon",
         file: "/assets/moon.gltf",
-        position: new THREE.Vector3(0, 0, 0),
-        scale: 10,
+        position: new THREE.Vector3(0, -29, 0),
+        scale: 12,
         visible: true,
       },
     ];
@@ -34,22 +39,50 @@ const Scene = () => {
         const model = gltf.scene;
         model.position.copy(modelInfo.position);
         model.visible = modelInfo.visible;
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        scene.add(directionalLight);
+
         model.scale.set(modelInfo.scale, modelInfo.scale, modelInfo.scale);
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
         model.name = modelInfo.name;
-        scene.add(ambientLight);
         scene.add(model);
       });
     });
 
     camera.position.z = 95;
 
-    // Animation loop
+    // GSAP animation
+    gsap.to(models[0].position, {
+      y: 0,
+      duration: 1,
+      ease: "power2.inOut",
+      scrollTrigger: {
+        trigger: sceneRef.current,
+        start: "top top",
+        end: "bottom center",
+        scrub: true,
+      },
+    });
+
+    gsap.to(models[0], {
+      x: 1,
+      y: 1,
+      z: 1,
+      duration: 1,
+      ease: "power2.inOut",
+      scrollTrigger: {
+        trigger: sceneRef.current,
+        start: "top top",
+        end: "bottom center",
+        scrub: true,
+      },
+    });
+
     const animate = () => {
       requestAnimationFrame(animate);
       models.forEach(() => {
         const model = scene.getObjectByName("moon");
-        if (model) model.rotation.y += 0.001;
+        if (model) model.rotation.x += -0.001;
       });
       renderer.render(scene, camera);
     };
@@ -62,4 +95,4 @@ const Scene = () => {
   return <div ref={sceneRef}></div>;
 };
 
-export default Scene;
+export default App;
